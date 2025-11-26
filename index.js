@@ -116,3 +116,104 @@ const createPlantCard = (plant) => {
     </div>
     `
 };
+
+// 6
+
+const openModal = async (plantId) => {
+    modalElement.classList.remove('hidden');
+    setTimeout( () => {
+        modalContentBox.classList.remove('scale-95', 'opacity-0');
+    }, 10);
+
+    modalBody.innerHTML = '<p class="text-red-500 text-center text-lg py-10">Loading plant details...</p>';
+    
+    const plant = await fetchData(API.plantsDetails(plantId));
+
+    if(!plant || !plant.id){
+        modalBody.innerHTML = '<p class="text-red-500 text-center text-lg py-10">Details not found!</p>';
+        return;
+    }
+
+    modalBody.innerHTML = `
+    <div class="text-center pb-4 border-b">
+    <img src="${plant.image || 'https://via.placeholder.com/200'}" alt="${plant.name}" class="w-40 h-40 object-cover rounded-full mx-auto mb-3 border-4 border-green-500">
+    <h3 class="text-3xl font-bold text-green-700">${plant.name}</h3>
+    <p class="text-lg text-gray-600">${plant.price || 'N/A'}</p>
+    </div>
+    <div class="mt-4 space-y-3">
+    <p><span class="font-semibold">Category:</span>${plant.description || 'No detailed description available.'}</p>
+    </div>
+    <div class="mt-6 text-center">
+    <button onclick="addToCart('${plant.id}'); closeModal()" class="bg-green-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-green-700">Add to Cart</button>
+    </div>
+    `;
+};
+
+const closeModal = () => {
+    modalContentBox.classList.remove('scale-100', 'opacity-100');
+    modalContentBox.classList.add('scale-95', 'opacity-0');
+    setTimeout (() => {
+        modalElement.classList.add('hidden');
+    }, 300);
+};
+
+// 7
+
+const addToCart = async (plantId) =>{
+    const existingItem = cart.find(item => item.id === plantId);
+    if(existingItem){
+        existingItem.quantity += 1;
+    }
+    else{
+        const plant = await fetchData(API.plantsDetails(plantId));
+        if(!plant) return;
+
+        const price = parseFloat(plant.price);
+        cart.push({id: plant.id, name: plant.name, price: price, quantity: 1});
+    }
+    updateCartDisplay();
+}
+
+// 8
+
+const removeItemFromCart = (plantId) =>{
+    const existingItemIndex = cart.findIndex(item => item.id === plantId);
+
+    if(existingItemIndex > -1){
+        if(cart[existingItemIndex].quantity > 1){
+            cart[existingItemIndex].quantity -= 1;
+        }
+        else{
+            cart.splice(existingItemIndex, 1);
+        }
+    }
+    updateCartDisplay();
+};
+
+const updateCartDisplay = () => {
+    cartItemsContainer.innerHTML = "";
+    let total = 0;
+    if(cart.length === 0){
+        cartItemsContainer.innerHTML = '<p class="text-gray-500">Cart is Empty</p>';
+    }
+    else{
+        cart.forEach(item => {
+            const itemTotal = parseFloat(item.price) * item.quantity;
+            total += itemTotal;
+
+            cartItemsContainer.innerHTML += `
+            <div class="flex justify-between items-center border-b pb-2">
+            <div class="flex-1 pr-2">
+            <p class="font-semibold">${item.name}</p>
+            <p>${item.quantity} x ৳${item.price.toFixed(2)}</p>
+            </div>
+            <span>${itemTotal.toFixed(2)}</span>
+            <button onclick="removeItemFromCart('${item.id}')" class="text-red-500 hover:text-red-700 font-bold text-lg leading-none p-1">&times;</button>
+            </div>
+            `
+        });
+    };
+    cartTotalElement.innerText =`৳${total.toFixed(2)}`;
+};
+
+document.addEventListener('DOMContentLoaded', loadCategories);
