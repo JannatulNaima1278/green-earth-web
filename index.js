@@ -35,3 +35,16 @@ const CUSTOM_CATEGORIES = [
     {name: 'Climbers', apiId: '9'},
     {name: 'Aquatic Plants', apiId: '10'},
 ]
+
+// 1
+
+const fetchData = async (url) => {
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.data || data.plants || [];
+    } catch (error) {
+        console.error("API Fetch Error:", error);
+        return null;
+    }
+};
